@@ -5,15 +5,76 @@ from tkinter import filedialog, messagebox
 from extract_ec2_errors import extract_ec2_errors
 from extract_rds_errors import extract_rds_errors
 from analyze_with_ai import analyze_with_ai
+import matplotlib.pyplot as plt
+import seaborn as sns
+from fpdf import FPDF
+import numpy as np
 
 
-# function to create the summary
+class ReportPDF(FPDF):
+    def header(self):
+        # Add company logo if needed
+        self.set_font("Arial", "B", 15)
+        self.cell(0, 10, "System Analysis Report", 0, 1, "C")
+        self.ln(10)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font("Arial", "I", 8)
+        self.cell(0, 10, f"Page {self.page_no()}", 0, 0, "C")
+
+
+def create_transaction_chart(successful_count, failed_transactions, promotexter_count):
+    plt.figure(figsize=(10, 6))
+    labels = ["Successful", "Failed", "SMS Sent"]
+    values = [successful_count, failed_transactions, promotexter_count]
+    colors = ["#2ecc71", "#e74c3c", "#3498db"]
+
+    plt.bar(labels, values, color=colors)
+    plt.title("Transaction Overview")
+    plt.ylabel("Number of Transactions")
+    plt.xticks(rotation=45)
+
+    # Save the chart
+    plt.savefig("transaction_overview.png", bbox_inches="tight", dpi=300)
+    plt.close()
+
+
+def create_error_pie_chart(error_categories):
+    plt.figure(figsize=(10, 6))
+    labels = [k[:20] + "..." if len(k) > 20 else k for k in error_categories.keys()]
+    values = list(error_categories.values())
+
+    plt.pie(values, labels=labels, autopct="%1.1f%%", startangle=90)
+    plt.title("Error Distribution")
+
+    # Save the chart
+    plt.savefig("error_distribution.png", bbox_inches="tight", dpi=300)
+    plt.close()
+
+
+def create_success_rate_gauge(success_rate):
+    plt.figure(figsize=(8, 4))
+
+    # Create a simple gauge chart
+    angles = np.linspace(0, 180, 100)
+    values = np.ones(100) * success_rate
+
+    plt.plot(angles, values)
+    plt.fill_between(angles, 0, values, alpha=0.3)
+    plt.title(f"Success Rate: {success_rate}%")
+
+    # Save the chart
+    plt.savefig("success_rate.png", bbox_inches="tight", dpi=300)
+    plt.close()
+
+
 def create_summary():
     date_today = date.today().strftime("%Y-%m-%d")
     current_time = datetime.now().strftime("%H:%M:%S")
     summary = []
 
-    # ask the user to select the base folder containing all the log files.
+    # Ask user to select folder
     base_path = filedialog.askdirectory(
         title="Select the folder containing all log files."
     )
@@ -21,39 +82,7 @@ def create_summary():
         messagebox.showerror("Error: ", "No folder selected, Operation is cancelled.")
         return
 
-    summary.append(f"**Summary Report as of {date_today} at {current_time}**")
-
-    #  random messages
-    greetings = ["Good day!", "Hello team,", "Greetings,", "Dear team,"]
-    intros = [
-        "We have completed our review of",
-        "We have analyzed",
-        "Following our inspection of",
-        "After examining",
-    ]
-    systems = [
-        "the logs from EC2, RDS, and Promotexter systems",
-        "the EC2, RDS, and Promotexter log files",
-        "the system logs (EC2, RDS, and Promotexter)",
-        "all relevant system logs",
-    ]
-    transitions = [
-        "The current findings are as follows:",
-        "Here are our key observations:",
-        "Please find our findings below:",
-        "Our analysis revealed the following:",
-    ]
-
-    message = (
-        f"{random.choice(greetings)} "
-        f"{random.choice(intros)} "
-        f"{random.choice(systems)}. "
-        f"{random.choice(transitions)}\n"
-    )
-
-    summary.append(message)
-
-    # initialize counters
+    # Initialize counters
     successful_count = 0
     promotexter_failed_count = 0
     failed_transactions = 0
@@ -63,8 +92,9 @@ def create_summary():
         "SYSTEM FAILURE; CATCH ALL TRANSACTION PROCESSING ERROR CODE": 0,
     }
     duplicate_transactions = set()
+    line_count = 0
 
-    # process ec2 logs.
+    # Process EC2 logs
     ec2_path = os.path.join(base_path, "Ec2 Logs (Raw)")
     if os.path.exists(ec2_path):
         for filename in os.listdir(ec2_path):
@@ -72,37 +102,17 @@ def create_summary():
                 file_path = os.path.join(ec2_path, filename)
                 with open(file_path, "r") as f:
                     line_count = sum(1 for _ in f)
-                # summary.append(
-                #     f"Ec2 Logs (Raw) - {filename}: {line_count} transaction(s)"
-                # )
-    # Define the base path
-    failed_transactions_path = os.path.join(base_path, "Ec2 Failed Transactions")
 
-    # Check if the directory exists
+    # Process EC2 Failed Transactions
+    failed_transactions_path = os.path.join(base_path, "Ec2 Failed Transactions")
     if os.path.exists(failed_transactions_path):
-        # Iterate over the files in the directory
         for filename in os.listdir(failed_transactions_path):
             if filename.endswith(".csv"):
-                # Create the full file path
                 file_path = os.path.join(failed_transactions_path, filename)
-
-                # Use the error extraction function
                 error_codes = extract_ec2_errors(file_path)
                 promotexter_failed_count = len(error_codes)
 
-                # Append the summary
-                summary.append(
-                    f"\nFailed to send SMS - {filename}: {promotexter_failed_count} failed to send SMS transaction(s)"
-                )
-                if error_codes:
-                    summary.append("\nDetailed Errors:")
-                    for error in error_codes:
-                        summary.append(f" - {error}")
-                else:
-                    summary.append(
-                        "Congratulations, no specific errors found in the log file."
-                    )
-    # process the RDS logs.
+    # Process RDS logs
     rds_path = os.path.join(base_path, "RDS Records")
     if os.path.exists(rds_path):
         for filename in os.listdir(rds_path):
@@ -110,11 +120,8 @@ def create_summary():
                 file_path = os.path.join(rds_path, filename)
                 with open(file_path, "r") as f:
                     successful_count = sum(1 for _ in f)
-                summary.append(
-                    f"\nUnionBank Successful Transactions - {filename}: {successful_count} successful transaction(s)"
-                )
 
-    # process the promotexter logs.
+    # Process Promotexter logs
     promotexter_path = os.path.join(base_path, "Promotexter Records")
     if os.path.exists(promotexter_path):
         for filename in os.listdir(promotexter_path):
@@ -122,87 +129,106 @@ def create_summary():
                 file_path = os.path.join(promotexter_path, filename)
                 with open(file_path, "r") as f:
                     line_count = sum(1 for _ in f)
-                summary.append(
-                    f"Sent SMS from Promotexter - {filename}: {line_count} transaction(s) sent succesfully."
-                )
 
-    # Define the path for RDS failed transactions
+    # Process RDS Failed Transactions
     failed_rds_transactions_path = os.path.join(rds_path, "RDS Failed Transactions")
-
-    # Check if the directory exists
     if os.path.exists(failed_rds_transactions_path):
-        # Iterate over the files in the directory
         for filename in os.listdir(failed_rds_transactions_path):
             if filename.endswith(".csv"):
-                # Create the full path for the file
                 file_path = os.path.join(failed_rds_transactions_path, filename)
-
-                # Extract error codes and categories
                 error_codes, error_cats = extract_rds_errors(file_path)
                 failed_transactions = len(error_codes)
 
-                # Update the error categories dynamically (increment counts)
+                # Update error categories
                 for category, count in error_cats.items():
                     if category in error_categories:
                         error_categories[category] += count
                     else:
                         error_categories[category] = count
 
-                # Append transaction details to the summary
-                summary.append(
-                    f"\nRDS Failed Transaction(s) - {filename}: {failed_transactions} transaction(s)"
-                )
-                if error_codes:
-                    summary.append("Found Errors:")
-                    for error in error_codes:
-                        summary.append(f" - {error}")
-    else:
-        summary.append("No RDS Failed Transactions directory found.")
-
-    # add summary statistics.
-    summary.append(f"\n-------------------------Overview-------------------------")
-    total_records_from_audit_trail = successful_count + failed_transactions
-    summary.append(f"\nTotal Records from Audtrail: {total_records_from_audit_trail}")
-    summary.append(f"UBP Successful Transaction(s): {successful_count}")
-    summary.append(f"Sent SMS from Promotexter:{line_count}")
-    summary.append(f"\nUBP Failed Transactions: {failed_transactions} transaction(s)")
-    # error messages counts.
-    summary.append(f"NO RECORDS ON FILE - {error_categories['NO RECORDS ON FILE']}")
-    summary.append(
-        f"EXCEEDS ACCOUNT AMOUNT LIMIT - {error_categories['EXCEEDS ACCOUNT AMOUNT LIMIT']}"
-    )
-    summary.append(
-        f"SYSTEM FAILURE; CATCH ALL TRANSACTION PROCESSING ERROR CODE - {error_categories['SYSTEM FAILURE; CATCH ALL TRANSACTION PROCESSING ERROR CODE']}"
-    )
-
-    # add duplicate transactions (if any were found during processing)
-    if duplicate_transactions:
-        summary.append("\nDuplcate Transactions:")
-        for txn_id, name in duplicate_transactions:
-            summary.append(
-                f"DUPLICATE TRANSACTION  - source_txn_id: {txn_id}, Name: {name}"
-            )
-        # add the analysis of AI.
+    # Get AI insights
     ai_insights = analyze_with_ai(base_path)
 
-    # add AI insights to the summary
-    summary.append("\n --------------------AI Insights---------------------------\n")
+    # Create PDF
+    pdf = ReportPDF()
+    pdf.add_page()
 
-    # add error analysis
-    summary.append("\n Error Pattern Analysis:")
-    for (
-        pattern,
-        count,
-    ) in ai_insights[
-        "error_analysis"
-    ]["common_patterns"]:
-        summary.append(f"- {pattern}: {count} occurrences")
+    # Add header information
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(0, 10, f"Report Generated: {date_today} at {current_time}", 0, 1, "L")
+    pdf.ln(5)
 
-    # add transaction analysis
-    summary.append("\nTransaction Pattern Analysis:")
-    summary.append(
-        f" - Success Rate: {ai_insights['transaction_analysis']['success_rate']:.1f}%"
+    # Add transaction overview chart
+    create_transaction_chart(successful_count, failed_transactions, line_count)
+    pdf.image("transaction_overview.png", x=10, w=190)
+    pdf.ln(5)
+
+    # Add error distribution pie chart
+    create_error_pie_chart(error_categories)
+    pdf.image("error_distribution.png", x=10, w=190)
+    pdf.ln(5)
+
+    # Add success rate gauge
+    success_rate = (
+        (successful_count / (successful_count + failed_transactions)) * 100
+        if (successful_count + failed_transactions) > 0
+        else 0
     )
+    create_success_rate_gauge(success_rate)
+    pdf.image("success_rate.png", x=10, w=190)
+    pdf.ln(5)
+
+    # Add statistical summary
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(0, 10, "Statistical Summary", 0, 1, "L")
+    pdf.set_font("Arial", "", 10)
+
+    stats = [
+        f"Total Records from Audit Trail: {successful_count + failed_transactions}",
+        f"UBP Successful Transactions: {successful_count}",
+        f"Sent SMS from Promotexter: {line_count}",
+        f"UBP Failed Transactions: {failed_transactions}",
+        f"NO RECORDS ON FILE: {error_categories['NO RECORDS ON FILE']}",
+        f"EXCEEDS ACCOUNT AMOUNT LIMIT: {error_categories['EXCEEDS ACCOUNT AMOUNT LIMIT']}",
+        f"SYSTEM FAILURE: {error_categories['SYSTEM FAILURE; CATCH ALL TRANSACTION PROCESSING ERROR CODE']}",
+    ]
+
+    for stat in stats:
+        pdf.cell(0, 8, stat, 0, 1)
+
+    # Add duplicate transactions if any
+    if duplicate_transactions:
+        pdf.cell(0, 10, "Duplicate Transactions:", 0, 1)
+        for txn_id, name in duplicate_transactions:
+            pdf.cell(
+                0,
+                8,
+                f"DUPLICATE TRANSACTION - source_txn_id: {txn_id}, Name: {name}",
+                0,
+                1,
+            )
+
+    # Add AI Insights
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(0, 10, "AI Insights", 0, 1, "L")
+    pdf.set_font("Arial", "", 10)
+
+    # Add error analysis
+    pdf.cell(0, 10, "Error Pattern Analysis:", 0, 1)
+    for pattern, count in ai_insights["error_analysis"]["common_patterns"]:
+        pdf.cell(0, 8, f"- {pattern}: {count} occurrences", 0, 1)
+
+    # Add transaction analysis
+    pdf.cell(0, 10, "Transaction Pattern Analysis:", 0, 1)
+    pdf.cell(
+        0,
+        8,
+        f"Success Rate: {ai_insights['transaction_analysis']['success_rate']:.1f}%",
+        0,
+        1,
+    )
+
     if ai_insights["transaction_analysis"]["peak_hours"]:
         peak_hours_str = ", ".join(
             [
@@ -210,36 +236,50 @@ def create_summary():
                 for h in ai_insights["transaction_analysis"]["peak_hours"]
             ]
         )
-        summary.append(f"- Peak Transaction Hours: {peak_hours_str}")
+        pdf.cell(0, 8, f"Peak Transaction Hours: {peak_hours_str}", 0, 1)
 
-    # add promotexter analysis.
-    summary.append("\nPromotexter Delivery Analysis:")
-    summary.append(
-        f" - Delvery Success Rate: {ai_insights['sms_analysis']['delivery_rate']:.1f}%"
+    # Add Promotexter analysis
+    pdf.cell(0, 10, "Promotexter Delivery Analysis:", 0, 1)
+    pdf.cell(
+        0,
+        8,
+        f"Delivery Success Rate: {ai_insights['sms_analysis']['delivery_rate']:.1f}%",
+        0,
+        1,
     )
 
-    # add AI recommendations
-    summary.append("\n AI Recommendations:")
+    # Add recommendations
+    pdf.cell(0, 10, "AI Recommendations:", 0, 1)
     for rec in ai_insights["overall_recommendations"]:
-        summary.append(f" - {rec}")
+        pdf.multi_cell(0, 8, f"- {rec}")
 
-    # ask user to select where to save the documentation
+    # Ask user where to save the PDF
     documentation_folder = filedialog.askdirectory(
-        title="Please select where to save the documentation"
+        title="Select where to save the PDF report"
     )
-
-    # check if the user select a folder for documentation
     if not documentation_folder:
         messagebox.showerror(
             "Error", "No folder selected for documentation. Operation cancelled"
         )
         return
 
-    # write summary to file.
-    summary_file_path = os.path.join(
-        documentation_folder, f"Data_Evaluation_for_{date_today}.txt"
+    # Save the PDF
+    pdf_path = os.path.join(
+        documentation_folder, f"Data_Evaluation_for_{date_today}.pdf"
     )
-    with open(summary_file_path, "w") as f:
-        f.write("\n".join(summary))
+    pdf.output(pdf_path)
 
-    messagebox.showinfo("Success!", f"Overview Report generated: {summary_file_path}")
+    # Clean up temporary image files
+    for temp_file in [
+        "transaction_overview.png",
+        "error_distribution.png",
+        "success_rate.png",
+    ]:
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
+
+    messagebox.showinfo("Success!", f"PDF Report generated: {pdf_path}")
+
+
+if __name__ == "__main__":
+    create_summary()
