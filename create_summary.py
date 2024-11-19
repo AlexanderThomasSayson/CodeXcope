@@ -41,12 +41,43 @@ def create_transaction_chart(successful_count, failed_transactions, promotexter_
 
 
 def create_error_pie_chart(error_categories):
-    plt.figure(figsize=(10, 6))
-    labels = [k[:20] + "..." if len(k) > 20 else k for k in error_categories.keys()]
-    values = list(error_categories.values())
+    # Validate that we have data to plot
+    if not error_categories or not any(error_categories.values()):
+        plt.figure(figsize=(10, 6))
+        plt.text(
+            0.5,
+            0.5,
+            "No Error Data Available",
+            horizontalalignment="center",
+            verticalalignment="center",
+            transform=plt.gca().transAxes,
+        )
+        plt.title("Error Distribution")
+        plt.axis("off")
+    else:
+        plt.figure(figsize=(10, 6))
+        # Filter out zero values to avoid plotting issues
+        non_zero_errors = {k: v for k, v in error_categories.items() if v > 0}
 
-    plt.pie(values, labels=labels, autopct="%1.1f%%", startangle=90)
-    plt.title("Error Distribution")
+        if non_zero_errors:
+            labels = [
+                k[:20] + "..." if len(k) > 20 else k for k in non_zero_errors.keys()
+            ]
+            values = list(non_zero_errors.values())
+
+            plt.pie(values, labels=labels, autopct="%1.1f%%", startangle=90)
+            plt.title("Error Distribution")
+        else:
+            plt.text(
+                0.5,
+                0.5,
+                "All Error Counts Are Zero",
+                horizontalalignment="center",
+                verticalalignment="center",
+                transform=plt.gca().transAxes,
+            )
+            plt.title("Error Distribution")
+            plt.axis("off")
 
     # Save the chart
     plt.savefig("error_distribution.png", bbox_inches="tight", dpi=300)
@@ -56,17 +87,74 @@ def create_error_pie_chart(error_categories):
 def create_success_rate_gauge(success_rate):
     plt.figure(figsize=(8, 4))
 
+    # Validate success rate
+    if not isinstance(success_rate, (int, float)) or np.isnan(success_rate):
+        success_rate = 0
+
+    # Ensure success rate is between 0 and 100
+    success_rate = max(0, min(100, success_rate))
+
     # Create a simple gauge chart
     angles = np.linspace(0, 180, 100)
     values = np.ones(100) * success_rate
 
     plt.plot(angles, values)
     plt.fill_between(angles, 0, values, alpha=0.3)
-    plt.title(f"Success Rate: {success_rate}%")
+    plt.title(f"Success Rate: {success_rate:.1f}%")
 
     # Save the chart
     plt.savefig("success_rate.png", bbox_inches="tight", dpi=300)
     plt.close()
+
+
+def create_transaction_chart(successful_count, failed_transactions, promotexter_count):
+    plt.figure(figsize=(10, 6))
+
+    # Validate inputs
+    successful_count = max(
+        0, successful_count if isinstance(successful_count, (int, float)) else 0
+    )
+    failed_transactions = max(
+        0, failed_transactions if isinstance(failed_transactions, (int, float)) else 0
+    )
+    promotexter_count = max(
+        0, promotexter_count if isinstance(promotexter_count, (int, float)) else 0
+    )
+
+    labels = ["Successful", "Failed", "SMS Sent"]
+    values = [successful_count, failed_transactions, promotexter_count]
+    colors = ["#2ecc71", "#e74c3c", "#3498db"]
+
+    if any(values):
+        plt.bar(labels, values, color=colors)
+    else:
+        plt.text(
+            0.5,
+            0.5,
+            "No Transaction Data Available",
+            horizontalalignment="center",
+            verticalalignment="center",
+            transform=plt.gca().transAxes,
+        )
+        plt.axis("off")
+
+    plt.title("Transaction Overview")
+    plt.ylabel("Number of Transactions")
+    plt.xticks(rotation=45)
+
+    # Save the chart
+    plt.savefig("transaction_overview.png", bbox_inches="tight", dpi=300)
+    plt.close()
+
+
+def calculate_success_rate(successful_count, failed_transactions):
+    try:
+        total = successful_count + failed_transactions
+        if total > 0:
+            return (successful_count / total) * 100
+        return 0
+    except (TypeError, ZeroDivisionError):
+        return 0
 
 
 def create_summary():
