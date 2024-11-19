@@ -76,7 +76,7 @@ def create_summary():
                 #     f"Ec2 Logs (Raw) - {filename}: {line_count} transaction(s)"
                 # )
     # process failed transactions in ec2.
-    failed_transactions_path = os.path.join(base_path, "Ec2 failed transactions (Raw)")
+    failed_transactions_path = os.path.join(base_path, "Ec2 Failed Transactions")
     if os.path.exists(failed_transactions_path):
         for filename in os.listdir(failed_transactions_path):
             if filename.endswith(".csv"):
@@ -100,8 +100,8 @@ def create_summary():
                         "Congratulations, no specific errors found in the log file."
                     )
 
-    # process the rds logs.
-    rds_path = os.path.join(base_path, "RDS Logs")
+    # process the RDS logs.
+    rds_path = os.path.join(base_path, "RDS Records")
     if os.path.exists(rds_path):
         for filename in os.listdir(rds_path):
             if filename.endswith(".csv"):
@@ -109,7 +109,7 @@ def create_summary():
                 with open(file_path, "r") as f:
                     successful_count = sum(1 for _ in f)
                 summary.append(
-                    f"RDS Successful Transactions - {filename}: {successful_count} successful transaction(s)"
+                    f"UnionBank Successful Transactions - {filename}: {successful_count} successful transaction(s)"
                 )
 
     # process the promotexter logs.
