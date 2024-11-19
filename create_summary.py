@@ -75,31 +75,33 @@ def create_summary():
                 # summary.append(
                 #     f"Ec2 Logs (Raw) - {filename}: {line_count} transaction(s)"
                 # )
-    # process failed transactions in ec2.
+    # Define the base path
     failed_transactions_path = os.path.join(base_path, "Ec2 Failed Transactions")
+
+    # Check if the directory exists
     if os.path.exists(failed_transactions_path):
+        # Iterate over the files in the directory
         for filename in os.listdir(failed_transactions_path):
             if filename.endswith(".csv"):
-                failed_transactions_path = os.path.join(
-                    failed_transactions_path, filename
-                )
+                # Create the full file path
+                file_path = os.path.join(failed_transactions_path, filename)
 
-                # use the error extraction function
+                # Use the error extraction function
                 error_codes = extract_ec2_errors(file_path)
                 promotexter_failed_count = len(error_codes)
 
+                # Append the summary
                 summary.append(
                     f"\nFailed to send SMS - {filename}: {promotexter_failed_count} failed to send SMS transaction(s)"
                 )
                 if error_codes:
-                    summary.append("\n Detailed Errors:")
+                    summary.append("\nDetailed Errors:")
                     for error in error_codes:
                         summary.append(f" - {error}")
                 else:
                     summary.append(
                         "Congratulations, no specific errors found in the log file."
                     )
-
     # process the RDS logs.
     rds_path = os.path.join(base_path, "RDS Records")
     if os.path.exists(rds_path):
@@ -109,7 +111,7 @@ def create_summary():
                 with open(file_path, "r") as f:
                     successful_count = sum(1 for _ in f)
                 summary.append(
-                    f"UnionBank Successful Transactions - {filename}: {successful_count} successful transaction(s)"
+                    f"\nUnionBank Successful Transactions - {filename}: {successful_count} successful transaction(s)"
                 )
 
     # process the promotexter logs.
@@ -124,25 +126,38 @@ def create_summary():
                     f"Sent SMS from Promotexter - {filename}: {line_count} transaction(s) sent succesfully."
                 )
 
-    # process rds failed transactions with dynamic error categorization
-    failed_rds_transactions_path = os.path.join(rds_path, "RDC Failed Transactions")
+    # Define the path for RDS failed transactions
+    failed_rds_transactions_path = os.path.join(rds_path, "RDS Failed Transactions")
+
+    # Check if the directory exists
     if os.path.exists(failed_rds_transactions_path):
+        # Iterate over the files in the directory
         for filename in os.listdir(failed_rds_transactions_path):
             if filename.endswith(".csv"):
+                # Create the full path for the file
                 file_path = os.path.join(failed_rds_transactions_path, filename)
+
+                # Extract error codes and categories
                 error_codes, error_cats = extract_rds_errors(file_path)
                 failed_transactions = len(error_codes)
 
-                # update the error categories
+                # Update the error categories dynamically (increment counts)
                 for category, count in error_cats.items():
-                    error_categories[category] = count
+                    if category in error_categories:
+                        error_categories[category] += count
+                    else:
+                        error_categories[category] = count
 
+                # Append transaction details to the summary
                 summary.append(
-                    f"RDC Failed Transaction(s) - {filename}: {failed_transactions} transaction(s)"
+                    f"\nRDS Failed Transaction(s) - {filename}: {failed_transactions} transaction(s)"
                 )
-                summary.append("Found Errors:")
-                for error in error_codes:
-                    summary.append(f" - {error}")
+                if error_codes:
+                    summary.append("Found Errors:")
+                    for error in error_codes:
+                        summary.append(f" - {error}")
+    else:
+        summary.append("No RDS Failed Transactions directory found.")
 
     # add summary statistics.
     summary.append(f"\n-------------------------Overview-------------------------")

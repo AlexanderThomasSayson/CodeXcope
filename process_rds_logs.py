@@ -10,7 +10,7 @@ def process_rds_logs(file_path):
     date_today = date.today().strftime("%Y-%m-%d")
     folder_for_rds_records = create_folder(base_path, "RDS Records")
     folder_for_rds_failed_transactions = create_folder(
-        folder_for_rds_records, " RDS Failed Transactions"
+        folder_for_rds_records, "RDS Failed Transactions"
     )
 
     with open(file_path, "r") as file:
