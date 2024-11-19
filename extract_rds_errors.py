@@ -52,6 +52,6 @@ def extract_rds_errors(file_path):
                     rds_error_messages.append(", ".join(row))
 
     except Exception as e:
-        print(f"Error processing rds errors: {str(e)}")
+        print(f"Error processing RDS errors: {str(e)}")
 
     return rds_error_messages, rds_error_categories

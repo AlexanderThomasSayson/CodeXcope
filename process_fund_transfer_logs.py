@@ -49,7 +49,7 @@ def process_fund_transfer_logs(file_path):
         newline="",
     ) as f:
         writer = csv.writer(f)
-        writer.writerow([[line.strip()] for line in find_sending_sms])
+        writer.writerows([[line.strip()] for line in find_sending_sms])
 
     # save the raw HTTP status 200 OK.
     with open(
@@ -60,7 +60,7 @@ def process_fund_transfer_logs(file_path):
         newline="",
     ) as f:
         writer = csv.writer(f)
-        writer.writerow([[line.strip()] for line in find_status_200_ok])
+        writer.writerows([[line.strip()] for line in find_status_200_ok])
 
     # save the unsuccessful statuses.
     with open(
@@ -72,7 +72,7 @@ def process_fund_transfer_logs(file_path):
         newline="",
     ) as f:
         writer = csv.writer(f)
-        writer.writerow([[line.strip()] for line in find_error_responses])
+        writer.writerows([[line.strip()] for line in find_error_responses])
 
     # process the cleaned logs
     src_txn_ids = [

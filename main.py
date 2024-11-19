@@ -58,7 +58,7 @@ def create_gui():
     logo_label.image = logo
     logo_label.place(relx=0.5, rely=0.2, anchor=tk.CENTER)
 
-    buttons = ["Fund Transfer Logs", "Database Logs", "Promotexter Logs"]
+    buttons = ["Fund Transfer Logs", "RDS Logs", "Promotexter Logs"]
     for i, button in enumerate(buttons):
         btn = tk.Button(
             canvas, text=f"Upload {button}", command=lambda b=button: upload_file(b)

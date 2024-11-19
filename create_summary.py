@@ -72,9 +72,9 @@ def create_summary():
                 file_path = os.path.join(ec2_path, filename)
                 with open(file_path, "r") as f:
                     line_count = sum(1 for _ in f)
-                summary.append(
-                    f"Ec2 Logs (Raw) - {filename}: {line_count} transaction(s)"
-                )
+                # summary.append(
+                #     f"Ec2 Logs (Raw) - {filename}: {line_count} transaction(s)"
+                # )
     # process failed transactions in ec2.
     failed_transactions_path = os.path.join(base_path, "Ec2 failed transactions (Raw)")
     if os.path.exists(failed_transactions_path):
