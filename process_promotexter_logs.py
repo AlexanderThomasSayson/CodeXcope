@@ -35,3 +35,6 @@ def process_promotexter_data(file_path):
         writer = csv.writer(f)
         for log in extracted_records:
             writer.writerow([log])
+
+
+# 639095532118
