@@ -34,10 +34,11 @@ def process_fund_transfer_logs(file_path):
         if any(
             keyword in line
             for keyword in [
-                "HTTP Status Code:",
+                "HTTP Status Code: ",
                 "I/O",
                 "Unexpected error:",
-                "error_messages:",
+                "error_message:",
+                "Response Body:",
             ]
         )
     ]
