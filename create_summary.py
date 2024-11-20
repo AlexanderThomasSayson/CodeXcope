@@ -28,7 +28,7 @@ class ReportPDF(FPDF):
         self.ln(5)
 
     def chapter_body(self, text):
-        self.set_font("Arial", "", 10)
+        self.set_font("Arial", "", 8)  # Changed from 10 to 8
         # Split text into lines that fit within the page width
         lines = textwrap.wrap(text, width=90)  # Adjust width as needed
         for line in lines:
@@ -37,7 +37,10 @@ class ReportPDF(FPDF):
 
     def wrapped_cell(self, w, h, txt, border=0, align="", fill=False, ln=1):
         # Custom method to handle text wrapping in cells
-        lines = textwrap.wrap(txt, width=75) if txt else [""]  # Adjust width as needed
+        self.set_font("Arial", "", 8)  # Changed from 10 to 8
+        lines = (
+            textwrap.wrap(txt, width=90) if txt else [""]
+        )  # Adjusted width to match font size
         for i, line in enumerate(lines):
             if i == len(lines) - 1:  # Last line
                 self.cell(w, h, line, border, ln, align, fill)
@@ -330,14 +333,16 @@ def create_summary():
 
     # Add Brief Summary Section
     pdf.chapter_title("Brief Summary")
+    pdf.set_font("Arial", "", 8)  # Set font size to 8 for brief summary
     for line in brief_summary:
-        pdf.wrapped_cell(0, 8, line)
+        pdf.wrapped_cell(0, 6, line)  # Reduced height to match smaller font
     pdf.ln(10)
 
     # Add Text Summary Section
     pdf.chapter_title("Detailed Summary")
+    pdf.set_font("Arial", "", 8)  # Set font size to 8 for detailed summary
     for line in summary:
-        pdf.wrapped_cell(0, 8, line)
+        pdf.wrapped_cell(0, 6, line)  # Reduced height to match smaller font
     pdf.add_page()
 
     # Generate and add visualizations
