@@ -101,7 +101,7 @@ def create_summary():
                 error_codes = extract_ec2_errors(file_path)
                 promotexter_failed_count = len(error_codes)
                 summary.append(
-                    f"\nFailed to send SMS - {filename}: {promotexter_failed_count} failed to send SMS transaction(s)"
+                    f"\nErrors Found in EC2 Logs - {filename}: {promotexter_failed_count}"
                 )
                 if error_codes:
                     summary.append("\nDetailed Errors:")

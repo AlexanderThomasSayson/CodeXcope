@@ -37,7 +37,8 @@ def process_fund_transfer_logs(file_path):
                 "HTTP Status Code:",
                 "I/O",
                 "Unexpected error:",
-                "error_messages:",
+                "error_message:",
+                "Response Body:"
             ]
         )
     ]

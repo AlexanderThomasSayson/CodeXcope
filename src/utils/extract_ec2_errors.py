@@ -9,8 +9,9 @@ def extract_ec2_errors(file_path):
             if (
                 "HTTP Status Code: " in line
                 or "I/O" in line
-                or "error_messages:" in line
+                or "error_message:" in line
                 or "Unexpected error:" in line
+                or "Response Body:" in line
             ):
                 # extract the full error messages.
                 http_error_messages = line.strip()
