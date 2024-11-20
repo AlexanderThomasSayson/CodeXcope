@@ -2,8 +2,8 @@ import random
 import os
 from datetime import date, datetime
 from tkinter import filedialog, messagebox
-from extract_ec2_errors import extract_ec2_errors
-from extract_rds_errors import extract_rds_errors
+from ..utils.extract_ec2_errors import extract_ec2_errors
+from ..utils.extract_rds_errors import extract_rds_errors
 import matplotlib.pyplot as plt
 import seaborn as sns
 from fpdf import FPDF

@@ -1,5 +1,5 @@
 import os
-from log_analyzer import LogAnalyzer
+from src.model.log_analyzer import LogAnalyzer
 
 
 # process the analyzation with artificial intelligence.

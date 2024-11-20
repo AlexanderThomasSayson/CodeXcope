@@ -1,10 +1,10 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from process_fund_transfer_logs import process_fund_transfer_logs
-from process_promotexter_logs import process_promotexter_data
-from process_rds_logs import process_rds_logs
+from src.data_processing.process_fund_transfer_logs import process_fund_transfer_logs
+from src.data_processing.process_promotexter_logs import process_promotexter_data
+from src.data_processing.process_rds_logs import process_rds_logs
 from PIL import Image, ImageTk
-from create_summary import create_summary
+from src.data_processing.create_summary import create_summary
 
 
 # Function for the upload buttons
@@ -51,7 +51,7 @@ def create_gui():
     create_gradient(canvas, (64, 64, 64), (255, 255, 255), window_width, window_height)
 
     # Add logo (replace 'path_to_logo.png' with your actual logo path)
-    logo = Image.open(r"codeXcope.png")
+    logo = Image.open(r"src/img/codeXcope.png")
     logo = logo.resize((200, 150), Image.LANCZOS)
     logo = ImageTk.PhotoImage(logo)
     logo_label = tk.Label(canvas, image=logo, bg=canvas["bg"])
