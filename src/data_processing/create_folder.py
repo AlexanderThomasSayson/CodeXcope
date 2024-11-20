@@ -1,6 +1,5 @@
 import os
 
-
 # function to create folder for each file.
 # this takes two parameters: base path and the folder name.
 def create_folder(based_path, folder_name):

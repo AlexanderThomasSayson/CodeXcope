@@ -1,16 +1,18 @@
-import random
 import os
 from datetime import date, datetime
 from tkinter import filedialog, messagebox
-from ..utils.extract_ec2_errors import extract_ec2_errors
-from ..utils.extract_rds_errors import extract_rds_errors
-import matplotlib.pyplot as plt
-import seaborn as sns
 from fpdf import FPDF
-import numpy as np
 import textwrap
 
 
+from src.data_processing.generate_brief_summary import generate_brief_summary
+from src.data_processing.generate_basic_insights import generate_basic_insights
+from src.data_processing.create_transaction_chart import create_transaction_chart
+from src.data_processing.create_error_pie_chart import create_error_pie_chart
+from src.data_processing.create_success_rate_gauge import create_success_rate_gauge
+from src.utils.generate_random_message import generate_random_message
+from src.utils.extract_ec2_errors import extract_ec2_errors
+from src.utils.extract_rds_errors import extract_rds_errors
 class ReportPDF(FPDF):
     def header(self):
         self.set_font("Arial", "", 15)
@@ -46,187 +48,6 @@ class ReportPDF(FPDF):
                 self.cell(w, h, line, border, ln, align, fill)
             else:
                 self.cell(w, h, line, 0, 1, align, fill)  # 1 = ln for new line
-
-
-def generate_brief_summary(
-    successful_count, failed_transactions, promotexter_count, error_categories
-):
-    """Generate a brief summary of the processing results."""
-    total_records = successful_count + failed_transactions
-
-    summary_lines = [
-        "-----------------Brief Summary-------------------",
-        f"Total Records from Auditrail: {total_records}",
-        f"UBP Successful Transaction(s): {successful_count}",
-        f"Promotexter Sent SMS: {promotexter_count}",
-        f"UBP Failed Transactions: {failed_transactions} transactions",
-    ]
-
-    # Add error category counts
-    for category, count in error_categories.items():
-        summary_lines.append(f"{category} - {count}")
-
-    return summary_lines
-
-
-def generate_basic_insights(
-    successful_count, failed_transactions, promotexter_count, error_categories
-):
-    """Generate basic statistical insights from the available data."""
-    total_transactions = successful_count + failed_transactions
-    success_rate = (
-        (successful_count / total_transactions * 100) if total_transactions > 0 else 0
-    )
-    sms_delivery_rate = (
-        (promotexter_count / successful_count * 100) if successful_count > 0 else 0
-    )
-
-    # Find most common error if any errors exist
-    most_common_error = (
-        max(error_categories.items(), key=lambda x: x[1])
-        if error_categories
-        else ("None", 0)
-    )
-
-    return {
-        "error_analysis": {
-            "common_patterns": [(most_common_error[0], most_common_error[1])]
-        },
-        "transaction_analysis": {
-            "success_rate": success_rate,
-            "total_transactions": total_transactions,
-            "peak_hours": [],  # We don't have hourly data in the current implementation
-        },
-        "sms_analysis": {"delivery_rate": sms_delivery_rate},
-        "overall_recommendations": [
-            f"Current success rate is {success_rate:.1f}%. Consider investigating failed transactions to improve this rate.",
-            f"SMS delivery rate is {sms_delivery_rate:.1f}%. Monitor this metric for service quality.",
-            f"Most common error: {most_common_error[0]} ({most_common_error[1]} occurrences).",
-        ],
-    }
-
-
-def create_transaction_chart(successful_count, failed_transactions, promotexter_count):
-    """Create a bar chart showing transaction statistics."""
-    plt.figure(figsize=(10, 6))
-
-    # Validate inputs
-    successful_count = max(
-        0, successful_count if isinstance(successful_count, (int, float)) else 0
-    )
-    failed_transactions = max(
-        0, failed_transactions if isinstance(failed_transactions, (int, float)) else 0
-    )
-    promotexter_count = max(
-        0, promotexter_count if isinstance(promotexter_count, (int, float)) else 0
-    )
-
-    labels = ["Successful", "Failed", "SMS Sent"]
-    values = [successful_count, failed_transactions, promotexter_count]
-    colors = ["#2ecc71", "#e74c3c", "#3498db"]
-
-    if any(values):
-        plt.bar(labels, values, color=colors)
-    else:
-        plt.text(
-            0.5,
-            0.5,
-            "No Transaction Data Available",
-            horizontalalignment="center",
-            verticalalignment="center",
-            transform=plt.gca().transAxes,
-        )
-        plt.axis("off")
-
-    plt.title("Transaction Overview")
-    plt.ylabel("Number of Transactions")
-    plt.xticks(rotation=45)
-    plt.savefig("transaction_overview.png", bbox_inches="tight", dpi=300)
-    plt.close()
-
-
-def create_error_pie_chart(error_categories):
-    """Create a pie chart showing error distribution."""
-    plt.figure(figsize=(10, 6))
-    if not error_categories or not any(error_categories.values()):
-        plt.text(
-            0.5,
-            0.5,
-            "No Error Data Available",
-            horizontalalignment="center",
-            verticalalignment="center",
-            transform=plt.gca().transAxes,
-        )
-        plt.axis("off")
-    else:
-        non_zero_errors = {k: v for k, v in error_categories.items() if v > 0}
-        if non_zero_errors:
-            labels = [
-                k[:20] + "..." if len(k) > 20 else k for k in non_zero_errors.keys()
-            ]
-            values = list(non_zero_errors.values())
-            plt.pie(values, labels=labels, autopct="%1.1f%%", startangle=90)
-        else:
-            plt.text(
-                0.5,
-                0.5,
-                "All Error Counts Are Zero",
-                horizontalalignment="center",
-                verticalalignment="center",
-                transform=plt.gca().transAxes,
-            )
-            plt.axis("off")
-
-    plt.title("Error Distribution")
-    plt.savefig("error_distribution.png", bbox_inches="tight", dpi=300)
-    plt.close()
-
-
-def create_success_rate_gauge(success_rate):
-    """Create a gauge chart showing success rate."""
-    plt.figure(figsize=(8, 4))
-    success_rate = max(
-        0,
-        min(100, float(success_rate) if isinstance(success_rate, (int, float)) else 0),
-    )
-
-    angles = np.linspace(0, 180, 100)
-    values = np.ones(100) * success_rate
-
-    plt.plot(angles, values)
-    plt.fill_between(angles, 0, values, alpha=0.3)
-    plt.title(f"Success Rate: {success_rate:.1f}%")
-
-    plt.savefig("success_rate.png", bbox_inches="tight", dpi=300)
-    plt.close()
-
-
-def generate_random_message():
-    """Generate a random introduction message for the report."""
-    greetings = ["Good day!", "Hello team,", "Greetings,", "Dear team,"]
-    intros = [
-        "We have completed our review of",
-        "We have analyzed",
-        "Following our inspection of",
-        "After examining",
-    ]
-    systems = [
-        "the logs from EC2, RDS, and Promotexter systems",
-        "the EC2, RDS, and Promotexter log files",
-        "the system logs (EC2, RDS, and Promotexter)",
-        "all relevant system logs",
-    ]
-    transitions = [
-        "The current findings are as follows:",
-        "Here are our key observations:",
-        "Please find our findings below:",
-        "Our analysis revealed the following:",
-    ]
-
-    return (
-        f"{random.choice(greetings)} {random.choice(intros)} "
-        f"{random.choice(systems)}. {random.choice(transitions)}\n"
-    )
 
 
 def create_summary():
