@@ -8,6 +8,8 @@ def extract_rds_errors(file_path):
         "NO RECORDS ON FILE": 0,
         "EXCEEDS ACCOUNT AMOUNT LIMIT": 0,
         "SYSTEM FAILURE; CATCH ALL TRANSACTION PROCESSING ERROR CODE": 0,
+        "SENT FOR PROCESSING": 0,
+        "TRANSACTIONFORBIDDEN": 0,
     }
 
     try:
@@ -48,7 +50,10 @@ def extract_rds_errors(file_path):
                         rds_error_categories[
                             "SYSTEM FAILURE; CATCH ALL TRANSACTION PROCESSING ERROR CODE"
                         ] += 1
-
+                    elif "SENT FOR PROCESSING" in message.upper():
+                        rds_error_categories["SENT FOR PROCESSING"] += 1
+                    elif "TRANSACTIONFORBIDDEN" in message.upper():
+                        rds_error_categories["TRANSACTIONFORBIDDEN"] += 1
                     rds_error_messages.append(", ".join(row))
 
     except Exception as e:

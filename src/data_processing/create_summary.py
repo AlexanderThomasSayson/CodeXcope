@@ -13,6 +13,8 @@ from src.data_processing.create_success_rate_gauge import create_success_rate_ga
 from src.utils.generate_random_message import generate_random_message
 from src.utils.extract_ec2_errors import extract_ec2_errors
 from src.utils.extract_rds_errors import extract_rds_errors
+
+
 class ReportPDF(FPDF):
     def header(self):
         self.set_font("Arial", "", 15)
@@ -75,6 +77,8 @@ def create_summary():
         "NO RECORDS ON FILE": 0,
         "EXCEEDS ACCOUNT AMOUNT LIMIT": 0,
         "SYSTEM FAILURE; CATCH ALL TRANSACTION PROCESSING ERROR CODE": 0,
+        "SENT FOR PROCESSING": 0,
+        "TRANSACTIONFORBIDDEN": 0,
     }
     duplicate_transactions = set()
     line_count = 0
